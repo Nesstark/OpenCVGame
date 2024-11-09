@@ -8,8 +8,6 @@ from mediapipe.tasks.python import vision
 
 # Initialize the video capture
 cap = cv2.VideoCapture(0)
-# Initialize the video capture
-cap = cv2.VideoCapture(0)
 
 # Initialize MediaPipe Face Detection
 mp_face_detection = mp.solutions.face_detection
@@ -22,12 +20,31 @@ rocket_speed = 5
 obstacles = []
 smoothing_factor = 0.2  # Adjust for smoother face-following movement
 start_time = time.time()  # Record the start time for score calculation
+initial_speed = 11200  # Rocket speed in m/s for low Earth orbit approximation
+score = 0
+target_altitude = 10_000_000  # Exosphere height in meters
 
 def draw_rocket(frame, x, y):
     cv2.rectangle(frame, (x - 10, y - 20), (x + 10, y + 20), (0, 0, 255), -1)
 
 def draw_obstacle(frame, x, y):
     cv2.rectangle(frame, (x - 10, y - 10), (x + 10, y + 10), (255, 0, 0), -1)
+
+def draw_progress_bar(frame, score, max_height=None):
+    """Draws a vertical progress bar on the right side of the frame based on the score."""
+    if max_height is None:
+        max_height = frame.shape[0]  # Set max_height to frame height if not provided
+    bar_height = int((score / target_altitude) * max_height)  # Scale bar height to target altitude
+    bar_y = frame.shape[0] - bar_height  # Calculate starting y-position
+    bar_x = frame.shape[1] - 30  # Position on the right side of the screen
+    cv2.rectangle(frame, (bar_x, bar_y), (bar_x + 20, frame.shape[0]), (255, 255, 255), -1)
+
+def display_score(frame, score):
+    """Displays the score with a black background in the top-left corner."""
+    altitude_text = f'Altitude: {score} m'
+    (text_width, text_height), _ = cv2.getTextSize(altitude_text, cv2.FONT_HERSHEY_SIMPLEX, 1, 2)
+    cv2.rectangle(frame, (10, 10), (10 + text_width + 20, 10 + text_height + 20), (0, 0, 0), -1)  # Black background
+    cv2.putText(frame, altitude_text, (20, 30 + text_height // 2), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
 while True:
     ret, frame = cap.read()
@@ -50,8 +67,20 @@ while True:
     # Draw the rocket
     draw_rocket(frame, rocket_x, rocket_y)
 
-    # Generate obstacles across the full frame width
-    if random.randint(1, 25) == 1:
+    # Calculate score based on time elapsed, in meters
+    elapsed_time = time.time() - start_time
+    score = int(initial_speed * elapsed_time)  # Altitude in meters
+
+    # Check for win condition
+    if score >= target_altitude:
+        cv2.putText(frame, 'You Win!', (200, 240), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 3)
+        cv2.imshow('Rocket Launcher Game', frame)
+        cv2.waitKey(3000)
+        break
+
+    # Dynamically increase difficulty
+    spawn_chance = max(5, 25 - score // 100000)  # Reduce spawn chance for higher altitude
+    if random.randint(1, spawn_chance) == 1:
         obstacles.append([random.randint(20, frame_width - 20), 0])
 
     # Move and draw obstacles
@@ -76,12 +105,11 @@ while True:
             cv2.destroyAllWindows()
             exit()
 
-    # Calculate the score based on survival time
-    elapsed_time = int(time.time() - start_time)
-    score = elapsed_time * 10  # Increase score based on time survived
+    # Display altitude with a black background
+    display_score(frame, score)
 
-    # Display score
-    cv2.putText(frame, f'Score: {score}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+    # Draw progress bar representing distance traveled into space
+    draw_progress_bar(frame, score)
 
     # Show frame
     cv2.imshow('Rocket Launcher Game', frame)
