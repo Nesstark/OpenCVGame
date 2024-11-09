@@ -73,7 +73,19 @@ while True:
 
     # Check for win condition
     if score >= target_altitude:
-        cv2.putText(frame, 'You Win!', (200, 240), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 3)
+        cv2.putText(frame, 'You Win!', (frame_width // 2 - 120, frame_height // 2 - 50), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 3)
+        
+        # Display the final altitude (how far you came)
+        altitude_text = f'Altitude: {score} m'
+        (text_width, text_height), _ = cv2.getTextSize(altitude_text, cv2.FONT_HERSHEY_SIMPLEX, 1, 2)
+        box_margin = 20
+        cv2.rectangle(frame, (frame_width // 2 - text_width // 2 - box_margin, frame_height // 2 + 10), 
+                      (frame_width // 2 + text_width // 2 + box_margin, frame_height // 2 + 10 + text_height + 2 * box_margin), (0, 0, 0), -1)
+        cv2.putText(frame, altitude_text, (frame_width // 2 - text_width // 2, frame_height // 2 + 10 + text_height + box_margin), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+
+        # Display the final score and wait before exiting
         cv2.imshow('Rocket Launcher Game', frame)
         cv2.waitKey(3000)
         break
@@ -98,7 +110,21 @@ while True:
     # Check for collisions
     for obstacle in obstacles:
         if abs(obstacle[0] - rocket_x) < 20 and abs(obstacle[1] - rocket_y) < 30:
-            cv2.putText(frame, 'Game Over', (200, 240), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3)
+            # Game Over
+            game_over_text = 'Game Over'
+            (go_text_width, go_text_height), _ = cv2.getTextSize(game_over_text, cv2.FONT_HERSHEY_SIMPLEX, 2, 3)
+            cv2.putText(frame, game_over_text, (frame_width // 2 - go_text_width // 2, frame_height // 2 - go_text_height // 2), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3)
+            
+            # Display the final altitude (how far you came)
+            altitude_text = f'Altitude: {score} m'
+            (text_width, text_height), _ = cv2.getTextSize(altitude_text, cv2.FONT_HERSHEY_SIMPLEX, 1, 2)
+            cv2.rectangle(frame, (frame_width // 2 - text_width // 2 - 10, frame_height // 2 + 10), 
+                          (frame_width // 2 + text_width // 2 + 10, frame_height // 2 + 10 + text_height + 40), (0, 0, 0), -1)
+            cv2.putText(frame, altitude_text, (frame_width // 2 - text_width // 2, frame_height // 2 + text_height + 30), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+
+            # Display the final score and wait before exiting
             cv2.imshow('Rocket Launcher Game', frame)
             cv2.waitKey(3000)
             cap.release()
