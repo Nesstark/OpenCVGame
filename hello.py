@@ -1,77 +1,66 @@
 import cv2
 import numpy as np
-import mediapipe as mp
+import random
 
-# Initialize mediapipe
-mp_hands = mp.solutions.hands
-hands = mp_hands.Hands()
-mp_drawing = mp.solutions.drawing_utils
-
-# Initialize game variables
-width, height = 640, 480
-ball_pos = [width // 2, height // 2]
-ball_vel = [4, 4]
-paddle1_pos = height // 2
-paddle2_pos = height // 2
-paddle_width, paddle_height = 10, 100
-score1, score2 = 0, 0
-
-# Initialize video capture
+# Initialize the video capture
 cap = cv2.VideoCapture(0)
-cap.set(3, width)
-cap.set(4, height)
 
-def detect_hands(frame):
-    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    result = hands.process(frame_rgb)
-    return result
+# Load the pre-trained Haar Cascade classifier for face detection
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
-while cap.isOpened():
+# Game variables
+rocket_x = 320
+rocket_y = 400
+rocket_speed = 5
+obstacles = []
+score = 0
+
+def draw_rocket(frame, x, y):
+    cv2.rectangle(frame, (x - 10, y - 20), (x + 10, y + 20), (0, 0, 255), -1)
+
+def draw_obstacle(frame, x, y):
+    cv2.rectangle(frame, (x - 10, y - 10), (x + 10, y + 10), (255, 0, 0), -1)
+
+while True:
     ret, frame = cap.read()
-    if not ret:
-        break
-
     frame = cv2.flip(frame, 1)
-    result = detect_hands(frame)
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray, 1.1, 4)
 
-    if result.multi_hand_landmarks:
-        for hand_landmarks in result.multi_hand_landmarks:
-            mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-            x = int(hand_landmarks.landmark[mp_hands.HandLandmark.WRIST].x * width)
-            y = int(hand_landmarks.landmark[mp_hands.HandLandmark.WRIST].y * height)
-            if x < width // 2:
-                paddle1_pos = y
-            else:
-                paddle2_pos = y
+    # Detect face and control rocket
+    for (x, y, w, h) in faces:
+        rocket_x = x + w // 2
 
-    # Update ball position
-    ball_pos[0] += ball_vel[0]
-    ball_pos[1] += ball_vel[1]
+    # Draw rocket
+    draw_rocket(frame, rocket_x, rocket_y)
 
-    # Ball collision with top and bottom
-    if ball_pos[1] <= 0 or ball_pos[1] >= height:
-        ball_vel[1] = -ball_vel[1]
+    # Generate obstacles
+    if random.randint(1, 20) == 1:
+        obstacles.append([random.randint(20, 620), 0])
 
-    # Ball collision with paddles
-    if (ball_pos[0] <= paddle_width and paddle1_pos - paddle_height // 2 <= ball_pos[1] <= paddle1_pos + paddle_height // 2) or \
-       (ball_pos[0] >= width - paddle_width and paddle2_pos - paddle_height // 2 <= ball_pos[1] <= paddle2_pos + paddle_height // 2):
-        ball_vel[0] = -ball_vel[0]
+    # Move obstacles
+    for obstacle in obstacles:
+        obstacle[1] += rocket_speed
+        draw_obstacle(frame, obstacle[0], obstacle[1])
+        if obstacle[1] > 480:
+            obstacles.remove(obstacle)
+            score += 1
 
-    # Ball out of bounds
-    if ball_pos[0] <= 0:
-        score2 += 1
-        ball_pos = [width // 2, height // 2]
-    elif ball_pos[0] >= width:
-        score1 += 1
-        ball_pos = [width // 2, height // 2]
+    # Check for collisions
+    for obstacle in obstacles:
+        if abs(obstacle[0] - rocket_x) < 20 and abs(obstacle[1] - rocket_y) < 30:
+            cv2.putText(frame, 'Game Over', (200, 240), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3)
+            cv2.imshow('Rocket Launcher Game', frame)
+            cv2.waitKey(3000)
+            cap.release()
+            cv2.destroyAllWindows()
+            exit()
 
-    # Draw everything
-    frame = cv2.rectangle(frame, (0, paddle1_pos - paddle_height // 2), (paddle_width, paddle1_pos + paddle_height // 2), (255, 0, 0), -1)
-    frame = cv2.rectangle(frame, (width - paddle_width, paddle2_pos - paddle_height // 2), (width, paddle2_pos + paddle_height // 2), (0, 0, 255), -1)
-    frame = cv2.circle(frame, tuple(ball_pos), 10, (0, 255, 0), -1)
-    frame = cv2.putText(frame, f'Score: {score1} - {score2}', (width // 2 - 50, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+    # Display score
+    cv2.putText(frame, f'Score: {score}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
-    cv2.imshow('Pong Game', frame)
+    # Show frame
+    cv2.imshow('Rocket Launcher Game', frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
