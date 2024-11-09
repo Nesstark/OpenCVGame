@@ -116,7 +116,7 @@ while True:
 
     # Check for win condition
     if score >= target_altitude:
-        cv2.putText(frame, 'You Win!', (frame_width // 2 - 120, frame_height // 2 - 50), 
+        cv2.putText(frame, 'Mission Complete!', (frame_width // 2 - 120, frame_height // 2 - 50), 
                     cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 3)
         
         # Display the final altitude (how far you came)
@@ -134,8 +134,8 @@ while True:
         break
 
     # Dynamically increase difficulty
-    spawn_chance = max(5, 25 - score // 100000)  # Reduce spawn chance for higher altitude
-    if random.randint(1, spawn_chance) == 1:
+    spawn_chance = max(1, 20 - score // 50000)  # Reduce spawn chance for higher altitude, making it harder earlier
+    if random.randint(1, spawn_chance) <= 2:  # Increase the likelihood of spawning obstacles
         obstacle_type = random.choice(["asteroid", "satellite"])  # Randomly choose between asteroid or satellite
         obstacles.append([random.randint(20, frame_width - 20), 0, obstacle_type])
 
@@ -158,7 +158,7 @@ while True:
     for obstacle in obstacles:
         if abs(obstacle[0] - rocket_x) < 20 and abs(obstacle[1] - rocket_y) < 30:
             # Game Over
-            game_over_text = 'Game Over'
+            game_over_text = 'Mission Over'
             (go_text_width, go_text_height), _ = cv2.getTextSize(game_over_text, cv2.FONT_HERSHEY_SIMPLEX, 2, 3)
             cv2.putText(frame, game_over_text, (frame_width // 2 - go_text_width // 2, frame_height // 2 - go_text_height // 2), 
                         cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3)
