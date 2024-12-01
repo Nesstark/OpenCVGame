@@ -27,7 +27,7 @@ target_altitude = 10_000_000  # Exosphere height in meters
 # Function to draw rocket
 def draw_rocket(frame, x, y):
     # Simple rocket design (pointed top and body)
-    cv2.polylines(frame, [np.array([[x, y - 20], [x - 10, y], [x + 10, y]], np.int32)], isClosed=True, color=(0, 0, 255), thickness=3)  # Rocket top
+    cv2.fillPoly(frame, [np.array([[x, y - 20], [x - 10, y], [x + 10, y]], np.int32)], color=(0, 0, 255))  # Rocket top
     cv2.rectangle(frame, (x - 10, y), (x + 10, y + 20), (0, 0, 255), -1)  # Rocket body
     # Rocket flame with more dynamic flame-like appearance
     flame_points = np.array([
@@ -134,7 +134,7 @@ while True:
         break
 
     # Dynamically increase difficulty
-    spawn_chance = max(1, 20 - score // 50000)  # Reduce spawn chance for higher altitude, making it harder earlier
+    spawn_chance = max(1, 20 - min(score // 100000, 10))  # Cap the difficulty increase to prevent excessive obstacles
     if random.randint(1, spawn_chance) <= 2:  # Increase the likelihood of spawning obstacles
         obstacle_type = random.choice(["asteroid", "satellite"])  # Randomly choose between asteroid or satellite
         obstacles.append([random.randint(20, frame_width - 20), 0, obstacle_type])
@@ -156,14 +156,19 @@ while True:
 
     # Check for collisions
     for obstacle in obstacles:
-        if abs(obstacle[0] - rocket_x) < 20 and abs(obstacle[1] - rocket_y) < 30:
+        if obstacle[2] == "asteroid":
+            obstacle_width, obstacle_height = 30, 20
+        else:
+            obstacle_width, obstacle_height = 35, 25  # Shrink satellite hitbox to match its body size
+
+        if abs(obstacle[0] - rocket_x) < obstacle_width and abs(obstacle[1] - rocket_y) < obstacle_height:
             # Game Over
             game_over_text = 'Mission Over'
             (go_text_width, go_text_height), _ = cv2.getTextSize(game_over_text, cv2.FONT_HERSHEY_SIMPLEX, 2, 3)
             cv2.putText(frame, game_over_text, (frame_width // 2 - go_text_width // 2, frame_height // 2 - go_text_height // 2), 
                         cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3)
             
-             # Display the final altitude (how far you came)
+            # Display the final altitude (how far you came)
             altitude_text = f'Altitude: {score} m'
             (text_width, text_height), _ = cv2.getTextSize(altitude_text, cv2.FONT_HERSHEY_SIMPLEX, 1, 2)
             cv2.rectangle(frame, (frame_width // 2 - text_width // 2 - 10, frame_height // 2 + 10), 
