@@ -5,7 +5,7 @@ Your face controls a rocket as it ascends through Earth's atmosphere, dodging ob
 So strap in for a long ride! 🚀
 
 ------------
-Gameplay Objective:
+**Gameplay Objective**:
 Guide your rocket to achieve orbital altitude (10,000 km) while avoiding obstacles. The further you go, the higher your score and the closer you are to the exosphere.
 
 Controls:
