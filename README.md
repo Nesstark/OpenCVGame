@@ -11,4 +11,3 @@ Guide your rocket to achieve orbital altitude (10,000 km) while avoiding obstacl
 Controls:
 - Use your face to guide the rocket left or right.
 - Press Q anytime to quit the game.
-------------
